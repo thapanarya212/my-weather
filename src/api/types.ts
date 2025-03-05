@@ -20,6 +20,7 @@ export interface WeatherCondition {
 }
 
 export interface WeatherData {
+  visibility: undefined;
   coord: Coordinates;
   weather: WeatherCondition[];
   main: {
@@ -57,4 +58,20 @@ export interface ForecastData {
     sunrise: number;
     sunset: number;
   };
+}
+// src/api/types.ts
+
+export interface WeatherData {
+  // weather: { description: string; icon: string }[];
+  // main: { temp: number; feels_like: number; humidity: number };
+  // wind: { speed: number };
+  // sys: { sunrise: number; sunset: number };
+  dt: number;
+  timezone: number;  // ✅ Added timezone property
+}
+
+export interface GeocodingResponse {
+  name: string;
+  state?: string;
+  country: string;
 }

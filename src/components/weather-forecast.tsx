@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { ArrowDown, ArrowUp, Droplets, Wind, ThermometerSun, Sun, Clock } from "lucide-react";
+import { ArrowDown, ArrowUp, Droplets, Wind, ThermometerSun, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import type { ForecastData } from "@/api/types";

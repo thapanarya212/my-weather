@@ -1,25 +1,38 @@
 import { Card, CardContent } from "./ui/card";
-import { ArrowDown, ArrowUp, Droplets, Wind, Clock, Sun, Moon, Gauge, Eye, Navigation, Cloud } from "lucide-react";
+import { Droplets, Wind, Clock, Sun, Moon} from "lucide-react";
 import type { WeatherData, GeocodingResponse } from "@/api/types";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 interface CurrentWeatherProps {
-  data: WeatherData;
+  data?: WeatherData;
   locationName?: GeocodingResponse;
 }
 
 export function CurrentWeather({ data, locationName }: CurrentWeatherProps) {
+  if (!data) {
+    return (
+      <Card>
+        <CardContent>
+          <p className="text-sm text-gray-500">No weather data available.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const {
-    weather: [currentWeather],
-    main: { temp, feels_like, temp_min, temp_max, humidity, pressure },
-    wind: { speed, deg: windDeg },
-    clouds: { all: cloudiness },
-    visibility,
-    sys: { sunrise, sunset },
-    dt,
-    timezone
+    weather = [{ description: "N/A", icon: "01d" }],
+    main = { temp: 0, feels_like: 0, humidity: 0 },
+    wind = { speed: 0 },
+    sys = { sunrise: 0, sunset: 0 },
+    dt = 0,
+    timezone = 0, // Ensure timezone is correctly extracted
   } = data;
+
+  const currentWeather = weather[0] ?? { description: "N/A", icon: "01d" };
+  const { temp, feels_like, humidity } = main;
+  const { speed } = wind;
+  const { sunrise, sunset } = sys;
 
   const [time, setTime] = useState(new Date());
   const [isCelsius, setIsCelsius] = useState(true);
@@ -31,40 +44,39 @@ export function CurrentWeather({ data, locationName }: CurrentWeatherProps) {
   }, []);
 
   useEffect(() => {
-    const updateLastUpdated = () => {
-      const diff = Math.floor((Date.now() - dt * 1000) / 60000);
-      setLastUpdated(`${diff} minute${diff !== 1 ? "s" : ""} ago`);
-    };
-    updateLastUpdated();
-    const interval = setInterval(updateLastUpdated, 60000);
-    return () => clearInterval(interval);
+    if (dt > 0) {
+      const updateLastUpdated = () => {
+        const diff = Math.floor((Date.now() / 1000 - dt) / 60);
+        setLastUpdated(`${diff} minute${diff !== 1 ? "s" : ""} ago`);
+      };
+      updateLastUpdated();
+      const interval = setInterval(updateLastUpdated, 60000);
+      return () => clearInterval(interval);
+    }
   }, [dt]);
 
   const toFahrenheit = (celsius: number) => (celsius * 9) / 5 + 32;
   const formatTemp = (temp: number) => Math.round(isCelsius ? temp : toFahrenheit(temp));
-  
-  // Properly formats local time
-  const formatLocalTime = (timestamp: number) =>
-    new Date((timestamp + timezone - new Date().getTimezoneOffset() * 60) * 1000)
-      .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-  const getBackgroundColor = () => {
-    const currentTime = Math.floor(time.getTime() / 1000);
-    if (currentTime >= sunrise && currentTime < sunrise + 3 * 3600) return "bg-yellow-400";
-    if (currentTime >= sunrise + 3 * 3600 && currentTime < sunset - 3 * 3600) return "bg-blue-400";
-    if (currentTime >= sunset - 3 * 3600 && currentTime < sunset) return "bg-orange-500";
-    return "bg-gray-800";
+  const formatLocalTime = (timestamp: number) => {
+    if (!timestamp) return "N/A";
+    return new Date(timestamp * 1000 + timezone * 1000).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
+
+  // Fix night/day detection using proper timezone offset
+  const localTime = new Date(dt * 1000 + timezone * 1000);
+  const sunriseTime = new Date(sunrise * 1000 + timezone * 1000);
+  const sunsetTime = new Date(sunset * 1000 + timezone * 1000);
+  const isNightTime = localTime.getTime() >= sunsetTime.getTime() || localTime.getTime() < sunriseTime.getTime();
 
   return (
     <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-      <Card className={`overflow-hidden shadow-lg ${getBackgroundColor()} relative`}>
+      <Card className="overflow-hidden shadow-lg bg-gray-800 relative">
         <div className="absolute top-3 right-3 text-white">
-          {time.getTime() / 1000 >= sunset || time.getTime() / 1000 < sunrise ? (
-            <Moon className="h-6 w-6 text-yellow-300" />
-          ) : (
-            <Sun className="h-6 w-6 text-yellow-500" />
-          )}
+          {isNightTime ? <Moon className="h-6 w-6 text-yellow-300" /> : <Sun className="h-6 w-6 text-yellow-500" />}
         </div>
 
         <CardContent className="p-6">
@@ -73,7 +85,8 @@ export function CurrentWeather({ data, locationName }: CurrentWeatherProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold tracking-tight text-white">
-                    {locationName?.name}{locationName?.state && `, ${locationName.state}`}
+                    {locationName?.name || "Unknown Location"}
+                    {locationName?.state && `, ${locationName.state}`}
                   </h2>
                   <button
                     onClick={() => setIsCelsius(!isCelsius)}

@@ -4,11 +4,11 @@ import { format } from "date-fns";
 import type { WeatherData } from "@/api/types";
 
 interface WeatherDetailsProps {
-  data: WeatherData;
+  data?: WeatherData;
 }
 
 export function WeatherDetails({ data }: WeatherDetailsProps) {
-  if (!data || !data.wind || !data.main || !data.sys) {
+  if (!data?.wind || !data?.main || !data?.sys) {
     return (
       <Card>
         <CardHeader>
@@ -21,17 +21,20 @@ export function WeatherDetails({ data }: WeatherDetailsProps) {
     );
   }
 
-  const { wind, main, sys, visibility } = data;
+  const wind = data.wind ?? { deg: undefined };
+  const main = data.main ?? { pressure: undefined, humidity: undefined, feels_like: undefined };
+  const sys = data.sys ?? { sunrise: undefined, sunset: undefined };
+  const visibility = data.visibility ?? undefined;
 
   // Format time using date-fns
-  const formatTime = (timestamp: number) =>
+  const formatTime = (timestamp?: number) =>
     timestamp ? format(new Date(timestamp * 1000), "h:mm a") : "N/A";
 
   // Convert wind degree to direction
-  const getWindDirection = (degree: number) => {
+  const getWindDirection = (degree?: number) => {
+    if (degree === undefined) return "N/A";
     const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
-    const index = Math.round(((degree % 360) + 360) % 360 / 45) % 8;
-    return directions[index];
+    return directions[Math.round(degree / 45) % 8];
   };
 
   const details = [
@@ -47,27 +50,27 @@ export function WeatherDetails({ data }: WeatherDetailsProps) {
     },
     {
       title: "Wind Direction",
-      value: `${getWindDirection(wind.deg)} (${wind.deg}°)`,
+      value: wind.deg !== undefined ? `${getWindDirection(wind.deg)} (${wind.deg}°)` : "N/A",
       icon: <Compass className="h-5 w-5 text-green-500" />,
     },
     {
       title: "Pressure",
-      value: `${main.pressure} hPa`,
+      value: main.pressure !== undefined ? `${main.pressure} hPa` : "N/A",
       icon: <Gauge className="h-5 w-5 text-purple-500" />,
     },
     {
       title: "Humidity",
-      value: `${main.humidity}%`,
+      value: main.humidity !== undefined ? `${main.humidity}%` : "N/A",
       icon: <Droplet className="h-5 w-5 text-blue-400" />,
     },
     {
       title: "Visibility",
-      value: visibility ? `${(visibility / 1000).toFixed(1)} km` : "N/A",
+      value: visibility !== undefined ? `${(visibility / 1000).toFixed(1)} km` : "N/A",
       icon: <Eye className="h-5 w-5 text-gray-500" />,
     },
     {
       title: "Feels Like",
-      value: `${Math.round(main.feels_like)}°C`,
+      value: main.feels_like !== undefined ? `${Math.round(main.feels_like)}°C` : "N/A",
       icon: <ThermometerSun className="h-5 w-5 text-yellow-500" />,
     },
     {
