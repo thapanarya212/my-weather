@@ -80,7 +80,7 @@ export function WeatherDashboard() {
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
         <AlertDescription className="flex flex-col gap-4">
-          <p>Failed to fetch weather data. Please try again.</p>
+          <p>Failed to fetch weather data. Please try again. Check the GitHub account"https://github.com/thapanarya212/my-weather/" link below for more details, including images</p>
           <Button variant="outline" onClick={handleRefresh} className="w-fit">
             <RefreshCw className="mr-2 h-4 w-4" />
             Retry
